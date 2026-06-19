@@ -1,0 +1,109 @@
+# plasmid-clone-validator
+
+Offline, scriptable sequence-validation for molecular cloning — with a focus on
+**genetic code expansion (GCE) / directed-evolution** campaigns.
+
+Three small Python scripts that read your plasmid maps and sequencing results,
+call variants, translate the affected genes, and write figures + summaries.
+Everything runs **locally** — no account, no upload, no subscription.
+
+- **`compare_plasmid.py`** — compare a whole assembled plasmid (e.g. a
+  Plasmidsaurus consensus) to a reference map. Handles circular plasmids and
+  either strand, then classifies each difference (synonymous / missense /
+  nonsense / indel, or which backbone element it falls in).
+- **`align_sanger.py`** — align short Sanger `.ab1` reads to a region of a map
+  (quality-trimmed, both strands, Phred-gated discrepancies).
+- **`gce_report.py`** — for synthetase/tRNA libraries and evolution campaigns:
+  protein-level variant calls vs a parent, an amber/stop audit, NNK library QC,
+  and a cross-clone convergence roll-up.
+
+Reads **SnapGene `.dna`** and **GenBank `.gb`/`.gbk`** maps, and **`.ab1` /
+`.fasta` / `.gbk`** sequencing results — no format conversion.
+
+> **Honesty by design.** A green "IDENTICAL" verdict is only emitted when the
+> analysis actually examined the whole molecule (no soft-clipped ends, full
+> coverage, no low-confidence bases). If any region was not examined, the
+> verdict is explicitly *qualified* — the tool will not hand you an unearned
+> all-clear. Convergence in `gce_report` is reported as a **hypothesis**, not
+> proof of function.
+
+---
+
+## Install (one time)
+
+You need Python 3.9+ and two libraries:
+
+```
+pip install -r requirements.txt
+```
+
+(That installs `biopython` and `matplotlib`. Nothing else; no internet needed at run time.)
+
+## Quick start (bundled synthetic demo data)
+
+Everything in `example_test_data/` is a **fabricated demo plasmid** — try the
+tools on it before your own data:
+
+```bash
+# 1. Whole-plasmid comparison (clean = identical; mutant = 1 SNP + 1 indel)
+python compare_plasmid.py example_test_data/demo_plasmid.gb \
+    example_test_data/demo_clean.fasta example_test_data/demo_mutant.fasta
+
+# 2. GCE campaign: protein variants, amber audit, NNK QC, convergence
+python gce_report.py example_test_data/demo_plasmid.gb \
+    example_test_data/demo_clones --config example_test_data/demo_campaign.txt
+```
+
+Then point the same commands at your own map + results (a file or a whole folder).
+
+## What you get
+
+- **`compare_plasmid.py`** → `comparison_figures/`: a per-query figure + a
+  `comparison_summary.txt` with the verdict and every difference (position,
+  base change, and biological consequence).
+- **`gce_report.py`** → `gce_report/`: `gce_variants.csv` (per clone),
+  `mutation_matrix.csv` + a heatmap, and `gce_summary.txt` (unique genotypes +
+  convergent mutations).
+- **`align_sanger.py`** → `alignment_figures/`: a per-read figure, a combined
+  view, and `alignment_summary.txt`.
+
+## The GCE config file
+
+`gce_report.py` takes a small plain-text config describing the campaign:
+
+```
+gene: TargetGene           # label of the CDS in the map to analyse
+randomized: 15, 25, 35     # 1-based residue numbers randomized (NNK)
+amber: 40                  # designed amber (TAG) sites, residue numbers
+scheme: NNK                # randomization scheme (default NNK)
+```
+
+Only `gene` is required. Residue numbers are counted from the first codon of the
+named CDS feature in your map. The amber audit assumes **amber (TAG)**
+suppression (the GCE standard); opal (TGA) / ochre (TAA) are reported as hard
+stops.
+
+## Tests
+
+```
+pip install pytest
+python -m pytest test_toolkit.py -q
+```
+
+The suite (synthetic data) covers the known-answer cases plus completeness-gated
+verdicts, soft-clip detection, circular (rotation) invariance, and minus-strand
+residue numbering.
+
+## Notes & limitations
+
+- A single Sanger read covers ~800–1000 bp — validate long inserts with reads
+  from several primers whose coverage overlaps.
+- Biological calls are only as good as your map's annotations (CDS features,
+  reading frame). Numbering follows the CDS feature's frame.
+- The whole-plasmid comparison is validated to ~15 kb (alignment is O(N²) time
+  but memory stays flat); larger plasmids work but get slower.
+- This is research tooling provided as-is — sanity-check important results.
+
+## License
+
+MIT — see `LICENSE`.

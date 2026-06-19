@@ -1,0 +1,64 @@
+LOCUS       demo_plasmid            2400 bp    DNA     circular UNK 01-JAN-1980
+DEFINITION  Synthetic demo plasmid for toolkit test data (fabricated, no real
+            IP).
+ACCESSION   demo_plasmid
+VERSION     demo_plasmid
+KEYWORDS    .
+SOURCE      .
+  ORGANISM  .
+            .
+FEATURES             Location/Qualifiers
+     promoter        41..70
+                     /label="DemoProm"
+                     /codon_start=1
+     CDS             201..500
+                     /label="TargetGene"
+                     /codon_start=1
+     CDS             complement(701..880)
+                     /label="DrugR"
+                     /codon_start=1
+     rep_origin      1201..1500
+                     /label="demo_ori"
+                     /codon_start=1
+ORIGIN
+        1 cgtacgtacg tacgtacgta cgtacgtacg tacgtacgta cgtacgtacg tacgtacgta
+       61 cgtacgtacg tacgtacgta cgtacgtacg tacgtacgta cgtacgtacg tacgtacgta
+      121 cgtacgtacg tacgtacgta cgtacgtacg tacgtacgta cgtacgtacg tacgtacgta
+      181 cgtacgtacg tacgtacgta atgactttag ggccaagtat tccgattgtg gtgcccgcaa
+      241 tcggtgcgaa ccctcagaac ctgcgtaatc atttgggcga cgcaatagtg agtactagta
+      301 tccatcggat gttaatgtag gcctatgctt acctggcaca gtacacgcca tctttgtcca
+      361 gatggttgga gctcgctcgg atacgacatg gggaccgact gaggttattg gcacacgtat
+      421 acccacgaga cccacaaatg agatttcgag gaatgggtaa tccgagaggc cgcggcatcg
+      481 gatctgggac acataaaaca taaacgtacg tacgtacgta cgtacgtacg tacgtacgta
+      541 cgtacgtacg tacgtacgta cgtacgtacg tacgtacgta cgtacgtacg tacgtacgta
+      601 cgtacgtacg tacgtacgta cgtacgtacg tacgtacgta cgtacgtacg tacgtacgta
+      661 cgtacgtacg tacgtacgta cgtacgtacg tacgtacgta ttagtgtgta tacaacgacg
+      721 ctattagtgt cactcctccc ccatgaccca acgtccggga agcgctgtgc gtcctatcag
+      781 taatggttct gcttatagtg tttccccgcc cgtatagcag cgtgccaatg ccataggaag
+      841 agctcgtggc gttgcattgg agatagacat tatctttcat cgtacgtacg tacgtacgta
+      901 cgtacgtacg tacgtacgta cgtacgtacg tacgtacgta cgtacgtacg tacgtacgta
+      961 cgtacgtacg tacgtacgta cgtacgtacg tacgtacgta cgtacgtacg tacgtacgta
+     1021 cgtacgtacg tacgtacgta cgtacgtacg tacgtacgta cgtacgtacg tacgtacgta
+     1081 cgtacgtacg tacgtacgta cgtacgtacg tacgtacgta cgtacgtacg tacgtacgta
+     1141 cgtacgtacg tacgtacgta cgtacgtacg tacgtacgta cgtacgtacg tacgtacgta
+     1201 cgtacgtacg tacgtacgta cgtacgtacg tacgtacgta cgtacgtacg tacgtacgta
+     1261 cgtacgtacg tacgtacgta cgtacgtacg tacgtacgta cgtacgtacg tacgtacgta
+     1321 cgtacgtacg tacgtacgta cgtacgtacg tacgtacgta cgtacgtacg tacgtacgta
+     1381 cgtacgtacg tacgtacgta cgtacgtacg tacgtacgta cgtacgtacg tacgtacgta
+     1441 cgtacgtacg tacgtacgta cgtacgtacg tacgtacgta cgtacgtacg tacgtacgta
+     1501 cgtacgtacg tacgtacgta cgtacgtacg tacgtacgta cgtacgtacg tacgtacgta
+     1561 cgtacgtacg tacgtacgta cgtacgtacg tacgtacgta cgtacgtacg tacgtacgta
+     1621 cgtacgtacg tacgtacgta cgtacgtacg tacgtacgta cgtacgtacg tacgtacgta
+     1681 cgtacgtacg tacgtacgta cgtacgtacg tacgtacgta cgtacgtacg tacgtacgta
+     1741 cgtacgtacg tacgtacgta cgtacgtacg tacgtacgta cgtacgtacg tacgtacgta
+     1801 cgtacgtacg tacgtacgta cgtacgtacg tacgtacgta cgtacgtacg tacgtacgta
+     1861 cgtacgtacg tacgtacgta cgtacgtacg tacgtacgta cgtacgtacg tacgtacgta
+     1921 cgtacgtacg tacgtacgta cgtacgtacg tacgtacgta cgtacgtacg tacgtacgta
+     1981 cgtacgtacg tacgtacgta cgtacgtacg tacgtacgta cgtacgtacg tacgtacgta
+     2041 cgtacgtacg tacgtacgta cgtacgtacg tacgtacgta cgtacgtacg tacgtacgta
+     2101 cgtacgtacg tacgtacgta cgtacgtacg tacgtacgta cgtacgtacg tacgtacgta
+     2161 cgtacgtacg tacgtacgta cgtacgtacg tacgtacgta cgtacgtacg tacgtacgta
+     2221 cgtacgtacg tacgtacgta cgtacgtacg tacgtacgta cgtacgtacg tacgtacgta
+     2281 cgtacgtacg tacgtacgta cgtacgtacg tacgtacgta cgtacgtacg tacgtacgta
+     2341 cgtacgtacg tacgtacgta cgtacgtacg tacgtacgta cgtacgtacg tacgtacgta
+//

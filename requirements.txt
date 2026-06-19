@@ -1,0 +1,12 @@
+# Plasmid-validation toolkit — tested dependencies.
+# One-time install:   pip install -r requirements.txt
+#
+# biopython is PINNED: the whole-plasmid path is memory-safe only because 1.87
+# uses a linear-space aligner, and translation / minus-strand FeatureLocation /
+# aligner-coordinate behaviors are load-bearing (see AUDIT_REPORT.md ISSUE-2,
+# CONCERN-5). Bump it deliberately and re-run test_toolkit.py.
+biopython==1.87
+matplotlib>=3.5,<4
+
+# Dev only (running the regression suite):
+#   pip install pytest

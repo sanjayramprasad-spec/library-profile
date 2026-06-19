@@ -1,0 +1,5 @@
+# Demo GCE campaign config (synthetic data)
+gene: TargetGene
+randomized: 15, 25, 35
+amber: 40
+scheme: NNK
