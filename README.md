@@ -29,32 +29,57 @@ Reads **SnapGene `.dna`** and **GenBank `.gb`/`.gbk`** maps, and **`.ab1` /
 
 ---
 
-## Install (one time)
+## Getting started for users
 
-You need Python 3.9+ and two libraries:
+### 1. Get the code
+
+**Easiest (no git needed):** on the repo page, click the green **`Code`** button →
+**Download ZIP**, then unzip it. (If the repo is private, accept the GitHub
+invite first and make sure you're logged in.)
+
+**Or, with git:**
+
+```bash
+git clone https://github.com/sanjayramprasad-spec/plasmid-clone-validator.git
+cd plasmid-clone-validator
+```
+
+(For a private repo, cloning asks you to log in to GitHub the first time — a
+plain account password won't work; use the browser prompt, the GitHub CLI
+`gh auth login`, or an SSH key.)
+
+### 2. Install Python + the two libraries (one time)
+
+Install **Python 3.9 or newer** (on Windows, tick **"Add Python to PATH"** in
+the installer). Then, from inside the project folder:
 
 ```
 pip install -r requirements.txt
 ```
 
-(That installs `biopython` and `matplotlib`. Nothing else; no internet needed at run time.)
+That installs `biopython` and `matplotlib` — nothing else, and no internet is
+needed when you actually run the tools.
 
-## Quick start (bundled synthetic demo data)
+### 3. Try it on the bundled demo data
 
-Everything in `example_test_data/` is a **fabricated demo plasmid** — try the
-tools on it before your own data:
+Everything in `example_test_data/` is a **fabricated demo plasmid**, so you can
+run the tools before touching your own data:
 
 ```bash
-# 1. Whole-plasmid comparison (clean = identical; mutant = 1 SNP + 1 indel)
+# Whole-plasmid comparison (clean = identical; mutant = 1 SNP + 1 indel)
 python compare_plasmid.py example_test_data/demo_plasmid.gb \
     example_test_data/demo_clean.fasta example_test_data/demo_mutant.fasta
 
-# 2. GCE campaign: protein variants, amber audit, NNK QC, convergence
+# GCE campaign: protein variants, amber audit, NNK QC, convergence
 python gce_report.py example_test_data/demo_plasmid.gb \
     example_test_data/demo_clones --config example_test_data/demo_campaign.txt
 ```
 
-Then point the same commands at your own map + results (a file or a whole folder).
+### 4. Run it on your own data
+
+Point the same commands at your own map + results — a single file or a whole
+folder. Put quotes around any path that contains spaces. Outputs are written to
+a new folder next to your map (see "What you get" below).
 
 ## What you get
 
