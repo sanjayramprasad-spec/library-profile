@@ -30,6 +30,24 @@ Reads **SnapGene `.dna`** and **GenBank `.gb`/`.gbk`** maps, and **`.ab1` /
 
 ---
 
+## Example output
+
+`compare_plasmid.py` — a whole-plasmid comparison: the verdict, a circular map
+with every difference flagged, and the aligned sequence around each one
+(here a SNP and a 3 bp deletion, both in non-coding regions):
+
+![compare_plasmid example output](images/example_compare_plasmid.png)
+
+`cloning_report.py` — a clone × mutation map across a set of clones; a column
+lit up across several clones is a recurring (convergent) mutation (here `W` at
+residue 25 in three of five clones):
+
+![cloning_report example output](images/example_cloning_report_matrix.png)
+
+*(Both generated from the bundled synthetic demo data.)*
+
+---
+
 ## Getting started for users
 
 ### 1. Get the code
