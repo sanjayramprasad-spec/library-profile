@@ -1,11 +1,14 @@
-"""GCE clone report - protein-level analysis of evolved/library clones.
+"""Cloning report - protein-level analysis of many clones against one parent.
 
-For genetic code expansion (GCE) work: takes a batch of whole-plasmid results
-(e.g. Plasmidsaurus) for clones from a synthetase/tRNA library or evolution
-campaign, and reports what matters at the PROTEIN level - not just nucleotides.
+Takes a batch of whole-plasmid results (e.g. Plasmidsaurus) for clones of a
+construct and reports what matters at the PROTEIN level - not just nucleotides:
+which amino-acid changes each clone carries vs the parent, and which mutations
+recur across clones. Useful for ANY multi-clone screen (e.g. confirming colonies
+carry an intended mutation), with extra layers for genetic-code-expansion (GCE)
+directed-evolution campaigns (amber/stop audit, NNK library QC).
 
 It builds on compare_plasmid.py (imported, not re-implemented): each clone is
-aligned to the parent map, then this script adds four GCE-specific layers:
+aligned to the parent map, then this script adds four layers:
 
   1. PROTEIN VARIANTS   - amino-acid changes in the gene of interest vs the
                           parent (e.g. Y32G, L65V), plus changes OUTSIDE the
@@ -24,8 +27,8 @@ aligned to the parent map, then this script adds four GCE-specific layers:
                           not fitness convergence - confirm with activity data.
 
 USAGE
-    python gce_report.py PARENT.dna  RESULTS_FOLDER  --config campaign.txt
-    python gce_report.py PARENT.dna  clone1.fasta clone2.fasta --config campaign.txt
+    python cloning_report.py PARENT.dna  RESULTS_FOLDER  --config campaign.txt
+    python cloning_report.py PARENT.dna  clone1.fasta clone2.fasta --config campaign.txt
 
 CONFIG FILE (plain text; '#' starts a comment; one 'key: value' per line)
     gene: TargetGene           # label of the CDS in the map to analyse
@@ -38,10 +41,10 @@ ASSUMPTION - the stop audit assumes AMBER (TAG) suppression, the standard for th
     (ochre) are reported as hard stops. If your system suppresses opal/ochre,
     read those "HARD STOP" findings with that in mind.
 
-OUTPUTS (in "gce_report/" next to the parent .dna)
-    gce_variants.csv      one row per clone: mutations, pocket genotype, verdict
+OUTPUTS (in "cloning_report/" next to the parent .dna)
+    clone_variants.csv      one row per clone: mutations, pocket genotype, verdict
     mutation_matrix.csv   clones x mutated positions
-    gce_summary.txt       human-readable report incl. convergent mutations
+    cloning_summary.txt       human-readable report incl. convergent mutations
     mutation_matrix.png   heatmap of clones x positions
 
 Dependencies: biopython, matplotlib, and compare_plasmid.py in the same folder.
@@ -310,8 +313,8 @@ def print_clone(c: CloneResult) -> None:
 def write_outputs(clones: list[CloneResult], camp: Campaign, ref_name: str, out_dir: Path) -> None:
     import csv
 
-    # gce_variants.csv - one row per clone
-    with (out_dir / "gce_variants.csv").open("w", newline="", encoding="utf-8") as fh:
+    # clone_variants.csv - one row per clone
+    with (out_dir / "clone_variants.csv").open("w", newline="", encoding="utf-8") as fh:
         w = csv.writer(fh)
         w.writerow(["clone", "identity_%", "verdict", "gene_mutations", "pocket_genotype",
                     "amber_status"])
@@ -337,7 +340,7 @@ def write_outputs(clones: list[CloneResult], camp: Campaign, ref_name: str, out_
                 at = {m.resnum: m.variant_aa for m in c.mutations}
                 w.writerow([c.name] + [at.get(p, ".") for p in positions])
 
-    # gce_summary.txt
+    # cloning_summary.txt
     lines = [f"GCE campaign report  |  parent: {ref_name}  |  gene: {camp.gene}",
              f"clones analysed: {len(clones)}", "=" * 70, ""]
     rel = _reliable(clones)
@@ -364,7 +367,7 @@ def write_outputs(clones: list[CloneResult], camp: Campaign, ref_name: str, out_
         if c.amber_findings:
             for f in c.amber_findings:
                 lines.append(f"       amber: {f}")
-    (out_dir / "gce_summary.txt").write_text("\n".join(lines) + "\n", encoding="utf-8")
+    (out_dir / "cloning_summary.txt").write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
 def plot_matrix(clones: list[CloneResult], camp: Campaign, out_path: Path) -> None:
@@ -458,7 +461,7 @@ def main(argv: list[str]) -> int:
         print("ERROR: no clone sequences found. Pass .fasta/.gbk/.ab1 files or a folder.")
         return 1
 
-    out_dir = ref_path.parent / "gce_report"
+    out_dir = ref_path.parent / "cloning_report"
     out_dir.mkdir(exist_ok=True)
     print(f"Parent: {ref.name}  |  gene: {camp.gene} ({len(_coding(cds, ref.seq)) // 3} aa)")
     print(f"Randomized: {list(camp.randomized) or '-'}   Amber: {list(camp.amber) or '-'}   "

@@ -13,9 +13,10 @@ Everything runs **locally** — no account, no upload, no subscription.
   nonsense / indel, or which backbone element it falls in).
 - **`align_sanger.py`** — align short Sanger `.ab1` reads to a region of a map
   (quality-trimmed, both strands, Phred-gated discrepancies).
-- **`gce_report.py`** — for synthetase/tRNA libraries and evolution campaigns:
-  protein-level variant calls vs a parent, an amber/stop audit, NNK library QC,
-  and a cross-clone convergence roll-up.
+- **`cloning_report.py`** — protein-level report across many clones of a
+  construct: amino-acid variant calls vs a parent and which mutations recur.
+  For directed-evolution / genetic-code-expansion (GCE) work it adds an
+  amber/stop audit and NNK library QC.
 
 Reads **SnapGene `.dna`** and **GenBank `.gb`/`.gbk`** maps, and **`.ab1` /
 `.fasta` / `.gbk`** sequencing results — no format conversion.
@@ -24,7 +25,7 @@ Reads **SnapGene `.dna`** and **GenBank `.gb`/`.gbk`** maps, and **`.ab1` /
 > analysis actually examined the whole molecule (no soft-clipped ends, full
 > coverage, no low-confidence bases). If any region was not examined, the
 > verdict is explicitly *qualified* — the tool will not hand you an unearned
-> all-clear. Convergence in `gce_report` is reported as a **hypothesis**, not
+> all-clear. Convergence in `cloning_report` is reported as a **hypothesis**, not
 > proof of function.
 
 ---
@@ -70,8 +71,8 @@ run the tools before touching your own data:
 python compare_plasmid.py example_test_data/demo_plasmid.gb \
     example_test_data/demo_clean.fasta example_test_data/demo_mutant.fasta
 
-# GCE campaign: protein variants, amber audit, NNK QC, convergence
-python gce_report.py example_test_data/demo_plasmid.gb \
+# Per-clone protein report: variants, recurrence (+ amber audit / NNK QC for GCE)
+python cloning_report.py example_test_data/demo_plasmid.gb \
     example_test_data/demo_clones --config example_test_data/demo_campaign.txt
 ```
 
@@ -86,15 +87,15 @@ a new folder next to your map (see "What you get" below).
 - **`compare_plasmid.py`** → `comparison_figures/`: a per-query figure + a
   `comparison_summary.txt` with the verdict and every difference (position,
   base change, and biological consequence).
-- **`gce_report.py`** → `gce_report/`: `gce_variants.csv` (per clone),
-  `mutation_matrix.csv` + a heatmap, and `gce_summary.txt` (unique genotypes +
+- **`cloning_report.py`** → `cloning_report/`: `clone_variants.csv` (per clone),
+  `mutation_matrix.csv` + a heatmap, and `cloning_summary.txt` (unique genotypes +
   convergent mutations).
 - **`align_sanger.py`** → `alignment_figures/`: a per-read figure, a combined
   view, and `alignment_summary.txt`.
 
 ## The GCE config file
 
-`gce_report.py` takes a small plain-text config describing the campaign:
+`cloning_report.py` takes a small plain-text config describing the campaign:
 
 ```
 gene: TargetGene           # label of the CDS in the map to analyse

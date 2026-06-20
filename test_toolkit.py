@@ -19,7 +19,7 @@ sys.path.insert(0, str(HERE))
 DATA = HERE / "example_test_data"
 
 import compare_plasmid as cp          # noqa: E402
-import gce_report as gr               # noqa: E402
+import cloning_report as gr           # noqa: E402
 
 REF = DATA / "demo_plasmid.gb"
 CLEAN = DATA / "demo_clean.fasta"

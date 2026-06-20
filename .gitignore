@@ -1,8 +1,8 @@
 example_test_data/comparison_figures/
-example_test_data/gce_report/
+example_test_data/cloning_report/
 example_test_data/alignment_figures/
 comparison_figures/
-gce_report/
+cloning_report/
 alignment_figures/
 __pycache__/
 *.pyc
