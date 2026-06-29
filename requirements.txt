@@ -1,12 +1,13 @@
-# Plasmid-validation toolkit — tested dependencies.
+# library_profile dependencies.
 # One-time install:   pip install -r requirements.txt
 #
-# biopython is PINNED: the whole-plasmid path is memory-safe only because 1.87
-# uses a linear-space aligner, and translation / minus-strand FeatureLocation /
-# aligner-coordinate behaviors are load-bearing (see AUDIT_REPORT.md ISSUE-2,
-# CONCERN-5). Bump it deliberately and re-run test_toolkit.py.
-biopython==1.87
-matplotlib>=3.5,<4
+# Only two libraries, both pure-pip and Windows-friendly (no minimap2/mappy):
+#   biopython  - PairwiseAligner (reference alignment) + SeqIO (FASTA/FASTQ)
+#   matplotlib - the heatmap and bar figures
+# Validated on biopython 1.87; the test suite is the contract, so re-run it if
+# you change this pin (the aligned-row str() cast already guards version drift).
+biopython>=1.81
+matplotlib>=3.5
 
-# Dev only (running the regression suite):
+# Dev only (running the test suite):
 #   pip install pytest
