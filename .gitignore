@@ -4,6 +4,18 @@ example_test_data/alignment_figures/
 comparison_figures/
 cloning_report/
 alignment_figures/
+chimera_profile/
+example_test_data/chimera_profile/
+
+# Real, unpublished data must NEVER be committed (references, reads, slides, maps).
+Test_data/
+*.fastq
+*.fq
+*.fastq.gz
+*.fq.gz
+*.pptx
+*.dna
+
 __pycache__/
 *.pyc
 .pytest_cache/

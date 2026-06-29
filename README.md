@@ -17,6 +17,12 @@ Everything runs **locally** — no account, no upload, no subscription.
   construct: amino-acid variant calls vs a parent and which mutations recur.
   For directed-evolution / genetic-code-expansion (GCE) work it adds an
   amber/stop audit and NNK library QC.
+- **`chimera_profile.py`** — profile a **combinatorial chimera library** from
+  one pooled Nanopore (Plasmidsaurus) run: for each read it calls which source
+  contributed each domain (e.g. `N=Mc | catalytic=Mi | C=Mj`), then reports the
+  library-wide composition, per-domain source usage, abundance skew, and
+  dropouts. Pure-Python (no aligner) via source-specific k-mers, so it installs
+  and runs on Windows. See "Profiling a chimera library" below.
 
 Reads **SnapGene `.dna`** and **GenBank `.gb`/`.gbk`** maps, and **`.ab1` /
 `.fasta` / `.gbk`** sequencing results — no format conversion.
@@ -110,6 +116,56 @@ a new folder next to your map (see "What you get" below).
   convergent mutations).
 - **`align_sanger.py`** → `alignment_figures/`: a per-read figure, a combined
   view, and `alignment_summary.txt`.
+- **`chimera_profile.py`** → `chimera_profile/`: `per_read.tsv`,
+  `composition.tsv`, `domain_usage.tsv` + a `domain_usage.png` heatmap and
+  `top_genotypes.png`, and a `chimera_summary.txt` QC report.
+
+## Profiling a chimera library
+
+For a **combinatorial library** — many constructs, each assembled from
+interchangeable domain fragments drawn from a panel of source genes (e.g. an
+N-terminal, a middle, and a C-terminal domain, each taken from a different
+source and fused at conserved junctions) — `chimera_profile.py` answers "which
+source built each domain of each molecule, and how are the combinations
+distributed?"
+
+```bash
+python chimera_profile.py sources.fasta reads.fastq --names N,middle,C
+```
+
+- **`sources.fasta`** — full-length references, one record per source. They are
+  expected to share a backbone and conserved junctions and differ inside the
+  domains; the tool aligns them, **auto-detects the domains** as the variable
+  blocks between conserved junctions, and learns each source's domain alleles.
+- **`reads.fastq`** — one pooled run of all reads (`.fastq`/`.fasta`, or a folder).
+
+**Why no aligner:** a chimera read matches no single reference end-to-end, so a
+"best hit" is meaningless. Instead the tool counts k-mers *private to one source
+within a domain* — the sources are divergent enough that this classifies every
+domain unambiguously even at ~5% Nanopore error. Shared backbone / junction
+k-mers are never private, so they never vote. This keeps it **biopython-only**
+(no `minimap2`/`mappy`, which do not build on native Windows).
+
+**Honesty gate:** a domain is called only when its top source clears an absolute
+marker floor *and* beats the runner-up by a margin; otherwise it is `unassigned`
+(a truncated read, or a source **not in your panel**). A read counts toward
+composition only if **every** domain is called — partial/ambiguous reads are
+reported separately, never silently force-counted.
+
+Options: `--k 15`, `--min-markers 10`, `--margin 3.0`, `--anchor-min 20`,
+`--names …`, and `--expected designed_combos.tsv` (a designed-combination list,
+one combo per line, for a true coverage-of-design report).
+
+Outputs (in `chimera_profile/` next to the references):
+`per_read.tsv`, `composition.tsv`, `domain_usage.tsv`, a `domain_usage.png`
+heatmap, a `top_genotypes.png` bar, and `chimera_summary.txt` (yields, dropouts,
+skew, caveats).
+
+> **Limited by your panel.** With only the source references you provide, each
+> domain is resolved to one of *those* sources (or flagged). If the real library
+> includes building blocks you didn't supply, reads using them show up as
+> `partial`/`unassigned` rather than mis-called — add the missing references to
+> resolve them.
 
 ## The GCE config file
 
@@ -131,12 +187,15 @@ stops.
 
 ```
 pip install pytest
-python -m pytest test_toolkit.py -q
+python -m pytest -q
 ```
 
-The suite (synthetic data) covers the known-answer cases plus completeness-gated
-verdicts, soft-clip detection, circular (rotation) invariance, and minus-strand
-residue numbering.
+`test_toolkit.py` (synthetic data) covers the known-answer cases plus
+completeness-gated verdicts, soft-clip detection, circular (rotation)
+invariance, and minus-strand residue numbering. `test_chimera.py` covers the
+chimera profiler: domain auto-detection, known-answer mosaic calls, strand
+invariance, and the honesty gate (partial / unknown-source reads never count
+toward composition).
 
 ## Notes & limitations
 
