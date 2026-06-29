@@ -41,8 +41,8 @@ HOW IT WORKS (the pipeline, in order)
        usage heatmap and a top-genotypes bar, and a QC summary -> main().
 
 USAGE
-    python chimera_profile.py REFERENCES.fasta READS.fastq [READS2.fastq ...]
-    python chimera_profile.py REFERENCES.fasta a_folder_of_fastqs
+    python library_profile.py REFERENCES.fasta READS.fastq [READS2.fastq ...]
+    python library_profile.py REFERENCES.fasta a_folder_of_fastqs
     options:
       --k 15                 k-mer length (odd; larger = stricter, fewer hits)
       --min-markers 10       absolute private-marker floor to call a domain
@@ -51,13 +51,13 @@ USAGE
       --anchor-min 20        min length of a conserved run treated as a junction
       --expected FILE.tsv    optional designed-combination list for a coverage report
 
-OUTPUTS (in "chimera_profile/" next to the references file)
+OUTPUTS (in "library_profile/" next to the references file)
     per_read.tsv            one row per read: orientation, per-domain call, status
     composition.tsv         each observed source-combination and its read share
     domain_usage.tsv        per domain, how often each source allele was used
     domain_usage.png        domain x source usage heatmap
     top_genotypes.png       the most abundant combinations
-    chimera_summary.txt     honesty-gated QC: yields, dropouts, skew, caveats
+    library_summary.txt     honesty-gated QC: yields, dropouts, skew, caveats
 
 Dependencies: biopython, matplotlib   (see requirements.txt)
 """
@@ -768,7 +768,7 @@ def main(argv: list[str]) -> int:
         else:
             print(f"  NOTE: --expected file not found: {opts['expected']}")
 
-    out_dir = ref_path.parent / "chimera_profile"
+    out_dir = ref_path.parent / "library_profile"
     out_dir.mkdir(exist_ok=True)
     write_per_read_tsv(res, out_dir / "per_read.tsv")
     write_composition_tsv(res, out_dir / "composition.tsv")
@@ -776,7 +776,7 @@ def main(argv: list[str]) -> int:
     plot_domain_usage(res, out_dir / "domain_usage.png")
     plot_top_genotypes(res, out_dir / "top_genotypes.png")
     summary = build_summary(res, ref_path.stem, expected)
-    (out_dir / "chimera_summary.txt").write_text(summary, encoding="utf-8")
+    (out_dir / "library_summary.txt").write_text(summary, encoding="utf-8")
 
     print()
     print(summary)

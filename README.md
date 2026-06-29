@@ -17,7 +17,7 @@ Everything runs **locally** — no account, no upload, no subscription.
   construct: amino-acid variant calls vs a parent and which mutations recur.
   For directed-evolution / genetic-code-expansion (GCE) work it adds an
   amber/stop audit and NNK library QC.
-- **`chimera_profile.py`** — profile a **combinatorial chimera library** from
+- **`library_profile.py`** — profile a **combinatorial chimera library** from
   one pooled Nanopore (Plasmidsaurus) run: for each read it calls which source
   contributed each domain (e.g. `N=Mc | catalytic=Mi | C=Mj`), then reports the
   library-wide composition, per-domain source usage, abundance skew, and
@@ -116,21 +116,21 @@ a new folder next to your map (see "What you get" below).
   convergent mutations).
 - **`align_sanger.py`** → `alignment_figures/`: a per-read figure, a combined
   view, and `alignment_summary.txt`.
-- **`chimera_profile.py`** → `chimera_profile/`: `per_read.tsv`,
+- **`library_profile.py`** → `library_profile/`: `per_read.tsv`,
   `composition.tsv`, `domain_usage.tsv` + a `domain_usage.png` heatmap and
-  `top_genotypes.png`, and a `chimera_summary.txt` QC report.
+  `top_genotypes.png`, and a `library_summary.txt` QC report.
 
 ## Profiling a chimera library
 
 For a **combinatorial library** — many constructs, each assembled from
 interchangeable domain fragments drawn from a panel of source genes (e.g. an
 N-terminal, a middle, and a C-terminal domain, each taken from a different
-source and fused at conserved junctions) — `chimera_profile.py` answers "which
+source and fused at conserved junctions) — `library_profile.py` answers "which
 source built each domain of each molecule, and how are the combinations
 distributed?"
 
 ```bash
-python chimera_profile.py sources.fasta reads.fastq --names N,middle,C
+python library_profile.py sources.fasta reads.fastq --names N,middle,C
 ```
 
 - **`sources.fasta`** — full-length references, one record per source. They are
@@ -156,9 +156,9 @@ Options: `--k 15`, `--min-markers 10`, `--margin 3.0`, `--anchor-min 20`,
 `--names …`, and `--expected designed_combos.tsv` (a designed-combination list,
 one combo per line, for a true coverage-of-design report).
 
-Outputs (in `chimera_profile/` next to the references):
+Outputs (in `library_profile/` next to the references):
 `per_read.tsv`, `composition.tsv`, `domain_usage.tsv`, a `domain_usage.png`
-heatmap, a `top_genotypes.png` bar, and `chimera_summary.txt` (yields, dropouts,
+heatmap, a `top_genotypes.png` bar, and `library_summary.txt` (yields, dropouts,
 skew, caveats).
 
 > **Limited by your panel.** With only the source references you provide, each

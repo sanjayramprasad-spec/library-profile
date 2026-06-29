@@ -1,4 +1,4 @@
-"""Regression tests for chimera_profile.py.
+"""Regression tests for library_profile.py.
 
 Run from this folder:  python -m pytest test_chimera.py -q
 
@@ -19,7 +19,7 @@ from Bio.SeqRecord import SeqRecord
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 
-import chimera_profile as cpf          # noqa: E402
+import library_profile as cpf          # noqa: E402
 
 BASES = "ACGT"
 _COMPL = str.maketrans("ACGT", "TGCA")

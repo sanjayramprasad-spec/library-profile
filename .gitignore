@@ -4,8 +4,8 @@ example_test_data/alignment_figures/
 comparison_figures/
 cloning_report/
 alignment_figures/
-chimera_profile/
-example_test_data/chimera_profile/
+library_profile/
+example_test_data/library_profile/
 
 # Real, unpublished data must NEVER be committed (references, reads, slides, maps).
 Test_data/
