@@ -6,13 +6,8 @@ whole library: combination composition, per-domain source usage, abundance skew,
 and dropouts. Runs **locally**, pure-Python — no account, no upload, no aligner
 to compile.
 
-> *This repo was renamed from `plasmid-clone-validator`; it now holds a single
-> tool, `library_profile.py`. Renaming the GitHub repo to **`library-profile`**
-> (Settings → General → Repository name) is optional and won't break clones.*
-
 A **chimera library** is a pool of constructs, each assembled from interchangeable
-domain fragments drawn from a panel of source genes — e.g. an N-terminal, a
-middle, and a C-terminal domain, each taken from a different source and fused at
+domain fragments drawn from a panel of source genes, each taken from a different source and fused at
 conserved junctions. One pooled Nanopore (e.g. Plasmidsaurus) run gives thousands
 of reads; per molecule we want the **domain mosaic** — `N=srcA | mid=srcC |
 C=srcD` — and then the library-wide picture.
