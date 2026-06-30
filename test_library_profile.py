@@ -202,6 +202,25 @@ def test_partial_outranks_ambiguous_in_status():
     assert call.genotype is None
 
 
+def test_names_parsing_accepts_comma_and_space_forms():
+    # All the ways a shell can hand us three names must yield the same tuple.
+    base = ["sources.fasta", "reads.fastq", "--names"]
+    expected = ("N-term", "catalytic", "C-term")
+    assert cpf._parse_args(base + ["N-term,catalytic,C-term"])["names"] == expected
+    assert cpf._parse_args(base + ["N-term", "catalytic", "C-term"])["names"] == expected
+    assert cpf._parse_args(base + ["N-term,", "catalytic,", "C-term"])["names"] == expected
+    # --names must not swallow the positional read/ref paths.
+    parsed = cpf._parse_args(["refs.fasta", "--names", "N", "mid", "C", "reads.fastq"])
+    assert parsed["names"] == ("N", "mid", "C")
+    assert parsed["positional"] == ["refs.fasta", "reads.fastq"]
+
+
+def test_missing_option_value_errors_cleanly():
+    import pytest
+    with pytest.raises(SystemExit):
+        cpf._parse_args(["refs.fasta", "reads.fastq", "--k"])
+
+
 def test_thin_marker_sources_are_warned():
     panel = _panel()
     # Real pools are a few hundred markers; a normal floor flags nothing...

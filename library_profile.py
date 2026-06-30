@@ -47,7 +47,8 @@ USAGE
       --k 15                 k-mer length (odd; larger = stricter, fewer hits)
       --min-markers 10       absolute private-marker floor to call a domain
       --margin 3.0           winner must beat runner-up by this ratio (by marker fraction)
-      --names N,cat,C        friendly domain names (else dom1, dom2, ... in order)
+      --names N cat C        friendly domain names in order (comma- or space-
+                             separated; else dom1, dom2, ...)
       --anchor-min 20        min length of a conserved run treated as a junction
       --expected FILE.tsv    optional designed-combination list for a coverage report
 
@@ -683,36 +684,61 @@ class _Opts(TypedDict):
     positional: list[str]
 
 
-def _nextarg(it, flag: str) -> str:
-    """Pull the value following an option, with a friendly error if it's missing."""
-    try:
-        return next(it)
-    except StopIteration:
+def _argat(argv: list[str], idx: int, flag: str) -> str:
+    """The value at argv[idx], with a friendly error if the option had none."""
+    if idx >= len(argv):
         raise SystemExit(f"ERROR: option '{flag}' requires a value.")
+    return argv[idx]
+
+
+_SEQ_EXTS = (".fasta", ".fa", ".fna", ".fastq", ".fq", ".gz")
+
+
+def _looks_like_input(tok: str) -> bool:
+    """A token that is an option, a sequence file, or an existing path is NOT a
+    domain name -- used to stop --names from swallowing the reads/refs arguments."""
+    if tok.startswith("-"):
+        return True
+    if tok.lower().endswith(_SEQ_EXTS):
+        return True
+    return Path(tok).exists()
 
 
 def _parse_args(argv: list[str]) -> _Opts:
     opts: _Opts = {"k": DEFAULT_K, "min_markers": DEFAULT_MIN_MARKERS,
                    "margin": DEFAULT_MARGIN, "anchor_min": DEFAULT_ANCHOR_MIN,
                    "names": None, "expected": None, "positional": []}
-    it = iter(argv)
-    for tok in it:
+    i, n = 0, len(argv)
+    while i < n:
+        tok = argv[i]
         if tok == "--k":
-            opts["k"] = int(_nextarg(it, tok))
+            opts["k"] = int(_argat(argv, i + 1, tok)); i += 2
         elif tok == "--min-markers":
-            opts["min_markers"] = int(_nextarg(it, tok))
+            opts["min_markers"] = int(_argat(argv, i + 1, tok)); i += 2
         elif tok == "--margin":
-            opts["margin"] = float(_nextarg(it, tok))
+            opts["margin"] = float(_argat(argv, i + 1, tok)); i += 2
         elif tok == "--anchor-min":
-            opts["anchor_min"] = int(_nextarg(it, tok))
-        elif tok == "--names":
-            opts["names"] = tuple(s.strip() for s in _nextarg(it, tok).split(","))
+            opts["anchor_min"] = int(_argat(argv, i + 1, tok)); i += 2
         elif tok == "--expected":
-            opts["expected"] = Path(_nextarg(it, tok))
+            opts["expected"] = Path(_argat(argv, i + 1, tok)); i += 2
+        elif tok == "--names":
+            # Accept comma- and/or space-separated names: greedily take the
+            # following name-like tokens (so "a,b,c", "a b c", and "a, b, c" all
+            # work), stopping before any reads/refs path or the next option.
+            i += 1
+            chunks: list[str] = []
+            while i < n and not _looks_like_input(argv[i]):
+                chunks.append(argv[i]); i += 1
+            names = [p for chunk in chunks
+                     for p in chunk.replace(",", " ").split() if p]
+            if not names:
+                raise SystemExit("ERROR: option '--names' requires at least one "
+                                 "domain name.")
+            opts["names"] = tuple(names)
         elif tok.startswith("--"):
             raise SystemExit(f"ERROR: unknown option '{tok}'")
         else:
-            opts["positional"].append(tok)
+            opts["positional"].append(tok); i += 1
     return opts
 
 

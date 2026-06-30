@@ -125,7 +125,7 @@ synthetic demo's planted skew: `srcA` favoured at N, `srcD` at C):
 | `--k` | 15 | k-mer length (odd; larger = stricter, fewer hits) |
 | `--min-markers` | 10 | absolute private-marker floor to call a domain |
 | `--margin` | 3.0 | winner must beat runner-up by this ratio (by marker fraction) |
-| `--names` | `dom1,dom2,…` | friendly domain names, in order |
+| `--names` | `dom1,dom2,…` | friendly domain names, in order (comma- or space-separated) |
 | `--anchor-min` | 20 | min length of a conserved run treated as a junction |
 | `--expected FILE` | — | a designed-combination list (one combo per line) for a true coverage report |
 
