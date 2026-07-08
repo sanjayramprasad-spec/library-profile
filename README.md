@@ -1,6 +1,6 @@
 # library-profile
 
-Profile a **combinatorial chimera library** from one pooled long-read run — for
+Profile a **combinatorial chimera library** from one pooled long-read run. For
 every read, work out which source contributed each domain, then summarise the
 whole library: combination composition, per-domain source usage, abundance skew,
 and dropouts. Runs **locally**, pure-Python — no account, no upload, no aligner
