@@ -221,6 +221,76 @@ def test_missing_option_value_errors_cleanly():
         cpf._parse_args(["refs.fasta", "reads.fastq", "--k"])
 
 
+# --- input handling: gzip + folder gathering ------------------------------- #
+def _write_fastq(path: Path, seqs: dict, *, gzipped: bool = False) -> None:
+    import gzip
+    lines = []
+    for rid, seq in seqs.items():
+        lines += [f"@{rid}", seq, "+", "I" * len(seq)]
+    text = "\n".join(lines) + "\n"
+    if gzipped:
+        with gzip.open(path, "wt", encoding="utf-8") as fh:
+            fh.write(text)
+    else:
+        path.write_text(text, encoding="utf-8")
+
+
+def test_seq_format_sees_through_gzip():
+    assert cpf._seq_format(Path("reads.fastq")) == "fastq"
+    assert cpf._seq_format(Path("reads.fastq.gz")) == "fastq"
+    assert cpf._seq_format(Path("refs.fasta.gz")) == "fasta"
+    assert cpf._seq_format(Path("notes.txt")) is None
+
+
+def test_gzipped_reads_are_parsed(tmp_path):
+    gz = tmp_path / "reads.fastq.gz"
+    _write_fastq(gz, {"r1": _chimera("srcA", "srcB", "srcC"),
+                      "r2": _chimera("srcD", "srcD", "srcD")}, gzipped=True)
+    paths = cpf._gather_reads([str(gz)])
+    assert paths == [gz]
+    recs = list(cpf._iter_records(paths))
+    assert [r.id for r in recs] == ["r1", "r2"]
+    # end-to-end: the gzipped reads classify exactly like their plaintext form
+    panel = _panel()
+    res = cpf.profile_reads(panel, cpf._iter_records(paths))
+    assert dict(res.composition())[("srcA", "srcB", "srcC")] == 1
+
+
+def test_folder_gather_excludes_references_and_finds_gz(tmp_path):
+    refs = tmp_path / "sources.fasta"
+    refs.write_text("".join(f">{s}\n{cpf.DEFAULT_K * 'A'}\n" for s in SOURCES),
+                    encoding="utf-8")
+    _write_fastq(tmp_path / "run_a.fastq", {"a1": _chimera("srcA", "srcB", "srcC")})
+    _write_fastq(tmp_path / "run_b.fastq.gz",
+                 {"b1": _chimera("srcD", "srcD", "srcD")}, gzipped=True)
+    gathered = cpf._gather_reads([str(tmp_path)], exclude={refs})
+    names = sorted(p.name for p in gathered)
+    assert names == ["run_a.fastq", "run_b.fastq.gz"]   # both reads, refs excluded
+    assert refs not in gathered
+
+
+def test_default_out_dir_tracks_reads_file(tmp_path):
+    # A single reads file -> results named after it, beside it.
+    p = tmp_path / "GS_pKW2-libv6-DH5a.fastq"
+    assert cpf._default_out_dir([p], [str(p)]) == tmp_path / "GS_pKW2-libv6-DH5a_profile"
+    # .gz is stripped along with the sequence extension.
+    g = tmp_path / "run1.fastq.gz"
+    assert cpf._default_out_dir([g], [str(g)]).name == "run1_profile"
+
+
+def test_default_out_dir_folder_argument_named_for_folder(tmp_path):
+    d = tmp_path / "reads_folder"
+    d.mkdir()
+    files = [d / "a.fastq", d / "b.fastq"]
+    assert cpf._default_out_dir(files, [str(d)]) == tmp_path / "reads_folder_profile"
+
+
+def test_default_out_dir_multiple_files_named_for_first(tmp_path):
+    files = [tmp_path / "lane1.fastq", tmp_path / "lane2.fastq", tmp_path / "lane3.fastq"]
+    out = cpf._default_out_dir(files, [str(p) for p in files])
+    assert out == tmp_path / "lane1_plus2_profile"
+
+
 def test_thin_marker_sources_are_warned():
     panel = _panel()
     # Real pools are a few hundred markers; a normal floor flags nothing...

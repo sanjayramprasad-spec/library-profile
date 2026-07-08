@@ -51,8 +51,10 @@ USAGE
                              separated; else dom1, dom2, ...)
       --anchor-min 20        min length of a conserved run treated as a junction
       --expected FILE.tsv    optional designed-combination list for a coverage report
+      --out DIR              output directory (default: "<reads>_profile/" next to
+                             the reads file, named after the read file it came from)
 
-OUTPUTS (in "library_profile/" next to the references file)
+OUTPUTS (in "<reads>_profile/" next to the reads file, or --out DIR)
     per_read.tsv            one row per read: orientation, per-domain call, status
     composition.tsv         each observed source-combination and its read share
     domain_usage.tsv        per domain, how often each source allele was used
@@ -64,6 +66,7 @@ Dependencies: biopython, matplotlib   (see requirements.txt)
 """
 from __future__ import annotations
 
+import gzip
 import sys
 from collections import Counter
 from dataclasses import dataclass
@@ -90,8 +93,19 @@ DEFAULT_ANCHOR_MIN = 20   # a conserved run >= this long is treated as an assemb
 MIN_DOMAIN_BP = 30        # ignore variable specks shorter than this when splitting domains
 
 _READ_FORMATS = {".fastq": "fastq", ".fq": "fastq", ".fasta": "fasta",
-                 ".fa": "fasta", ".fna": "fasta", ".gz": None}
+                 ".fa": "fasta", ".fna": "fasta"}
 _COMPL = str.maketrans("ACGTNacgtn", "TGCANtgcan")
+
+
+def _seq_format(path: Path) -> str | None:
+    """Sequence format for a reads path, or None if it is not a recognised
+    sequence file. A trailing '.gz' is transparent: the inner extension decides
+    the format (reads.fastq.gz -> 'fastq', refs.fasta.gz -> 'fasta')."""
+    suffixes = [s.lower() for s in path.suffixes]
+    if suffixes and suffixes[-1] == ".gz":
+        inner = suffixes[-2] if len(suffixes) >= 2 else ""
+        return _READ_FORMATS.get(inner)
+    return _READ_FORMATS.get(path.suffix.lower())
 
 
 def _rc(seq: str) -> str:
@@ -521,20 +535,23 @@ def plot_domain_usage(res: ProfileResult, path: Path) -> None:
     total = max(len(res.complete), 1)
     usage = res.domain_usage()
     grid = [[usage[d][s] / total for d in doms] for s in sources]
+    counts = [[usage[d][s] for d in doms] for s in sources]
 
-    fig, ax = plt.subplots(figsize=(1.6 + 1.1 * len(doms), 1.2 + 0.42 * len(sources)))
+    fig, ax = plt.subplots(figsize=(1.9 + 1.2 * len(doms), 1.2 + 0.5 * len(sources)))
     im = ax.imshow(grid, aspect="auto", cmap="viridis", vmin=0)
     ax.set_xticks(range(len(doms)), doms)
     ax.set_yticks(range(len(sources)), sources)
     ax.set_xlabel("domain")
     ax.set_title(f"Source usage per domain  (n={len(res.complete)} complete reads)")
+    hi = max(max(r) for r in grid)
     for yi in range(len(sources)):
         for xi in range(len(doms)):
             v = grid[yi][xi]
-            ax.text(xi, yi, f"{v*100:.0f}", ha="center", va="center",
-                    color="white" if v < 0.6 * max(max(r) for r in grid) else "black",
-                    fontsize=8)
-    fig.colorbar(im, ax=ax, label="fraction of reads")
+            # Label = raw read COUNT; the colour (and colorbar) carry the fraction,
+            # so the two never duplicate and a percentage can't be misread as a count.
+            ax.text(xi, yi, f"{counts[yi][xi]}", ha="center", va="center",
+                    color="white" if v < 0.6 * hi else "black", fontsize=8)
+    fig.colorbar(im, ax=ax, label="fraction of complete reads")
     fig.tight_layout()
     fig.savefig(path, dpi=150)
     plt.close(fig)
@@ -655,23 +672,51 @@ def build_summary(res: ProfileResult, ref_name: str, expected: set | None = None
 # --------------------------------------------------------------------------- #
 # CLI
 # --------------------------------------------------------------------------- #
-def _gather_reads(args: list[str]) -> list[Path]:
+def _gather_reads(args: list[str], exclude: set[Path] | None = None) -> list[Path]:
+    """Collect reads paths. A directory contributes every sequence file it holds
+    (including .gz). `exclude` drops paths that resolve to the same file as any
+    excluded one -- used to keep the references FASTA from being swept in as reads
+    when it happens to live in the same folder as the reads."""
+    excluded = {e.resolve() for e in (exclude or set())}
     paths: list[Path] = []
     for a in args:
         p = Path(a)
         if p.is_dir():
-            for ext, fmt in _READ_FORMATS.items():
-                if fmt:
-                    paths.extend(sorted(p.glob(f"*{ext}")))
-        elif p.suffix.lower() in _READ_FORMATS and p.exists():
+            for f in sorted(p.iterdir()):
+                if f.is_file() and _seq_format(f) is not None:
+                    paths.append(f)
+        elif p.is_file() and _seq_format(p) is not None:
             paths.append(p)
-    return paths
+    return [p for p in paths if p.resolve() not in excluded]
+
+
+def _default_out_dir(read_paths: list[Path], reads_args: list[str]) -> Path:
+    """Name the output folder after the READS input so a results folder always
+    traces back to the read file that produced it (you have one reference panel
+    but many read files). One file -> '<reads-stem>_profile/' beside it; a folder
+    -> '<folder>_profile/' beside it; several files -> named for the first."""
+    for a in reads_args:                       # a directory argument names the run
+        p = Path(a)
+        if p.is_dir():
+            return p.parent / f"{p.name}_profile"
+    label = read_paths[0].name
+    if label.lower().endswith(".gz"):          # strip .gz, then the seq extension
+        label = label[:-3]
+    label = Path(label).stem
+    if len(read_paths) > 1:
+        label = f"{label}_plus{len(read_paths) - 1}"
+    return read_paths[0].parent / f"{label}_profile"
 
 
 def _iter_records(paths: list[Path]):
     for p in paths:
-        fmt = _READ_FORMATS.get(p.suffix.lower()) or "fastq"
-        yield from SeqIO.parse(str(p), fmt)
+        fmt = _seq_format(p) or "fastq"
+        # gzip.open and open both take ('rt', encoding, errors); a single handle
+        # path covers plain and .gz uniformly and pins UTF-8 so a stray byte on a
+        # non-UTF-8 locale (Windows cp1252) can't abort the parse.
+        opener = gzip.open if p.suffix.lower() == ".gz" else open
+        with opener(p, "rt", encoding="utf-8", errors="replace") as fh:
+            yield from SeqIO.parse(fh, fmt)
 
 
 class _Opts(TypedDict):
@@ -681,6 +726,7 @@ class _Opts(TypedDict):
     anchor_min: int
     names: tuple[str, ...] | None
     expected: Path | None
+    out: Path | None
     positional: list[str]
 
 
@@ -707,7 +753,7 @@ def _looks_like_input(tok: str) -> bool:
 def _parse_args(argv: list[str]) -> _Opts:
     opts: _Opts = {"k": DEFAULT_K, "min_markers": DEFAULT_MIN_MARKERS,
                    "margin": DEFAULT_MARGIN, "anchor_min": DEFAULT_ANCHOR_MIN,
-                   "names": None, "expected": None, "positional": []}
+                   "names": None, "expected": None, "out": None, "positional": []}
     i, n = 0, len(argv)
     while i < n:
         tok = argv[i]
@@ -721,6 +767,8 @@ def _parse_args(argv: list[str]) -> _Opts:
             opts["anchor_min"] = int(_argat(argv, i + 1, tok)); i += 2
         elif tok == "--expected":
             opts["expected"] = Path(_argat(argv, i + 1, tok)); i += 2
+        elif tok == "--out":
+            opts["out"] = Path(_argat(argv, i + 1, tok)); i += 2
         elif tok == "--names":
             # Accept comma- and/or space-separated names: greedily take the
             # following name-like tokens (so "a,b,c", "a b c", and "a, b, c" all
@@ -762,7 +810,7 @@ def main(argv: list[str]) -> int:
         print(f"ERROR: could not read references '{ref_path.name}': {e}")
         return 1
 
-    read_paths = _gather_reads(pos[1:])
+    read_paths = _gather_reads(pos[1:], exclude={ref_path})
     if not read_paths:
         print("ERROR: no reads found. Pass .fastq/.fasta files or a folder.")
         return 1
@@ -794,8 +842,8 @@ def main(argv: list[str]) -> int:
         else:
             print(f"  NOTE: --expected file not found: {opts['expected']}")
 
-    out_dir = ref_path.parent / "library_profile"
-    out_dir.mkdir(exist_ok=True)
+    out_dir = opts["out"] or _default_out_dir(read_paths, pos[1:])
+    out_dir.mkdir(parents=True, exist_ok=True)
     write_per_read_tsv(res, out_dir / "per_read.tsv")
     write_composition_tsv(res, out_dir / "composition.tsv")
     write_domain_usage_tsv(res, out_dir / "domain_usage.tsv")
