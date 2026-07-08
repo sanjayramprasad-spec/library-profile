@@ -1,5 +1,5 @@
-# Tool output directory (written next to the references file).
-library_profile/
+# Tool output directory (written next to the reads file as <reads>_profile/).
+*_profile/
 
 # Real, unpublished data must NEVER be committed (references, reads, slides, maps).
 Test_data/

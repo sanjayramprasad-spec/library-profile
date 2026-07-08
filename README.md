@@ -53,8 +53,8 @@ using a source that isn't in your panel, are reported as `partial`/`ambiguous` a
 **Download ZIP**, then unzip. **Or, with git:**
 
 ```bash
-git clone https://github.com/sanjayramprasad-spec/plasmid-clone-validator.git
-cd plasmid-clone-validator
+git clone https://github.com/sanjayramprasad-spec/library-profile.git
+cd library-profile
 ```
 
 ### 2. Install Python + the two libraries (one time)
@@ -82,13 +82,15 @@ python library_profile.py example_data/demo_sources.fasta \
 ```
 
 You should see ~85% of reads resolve to a complete genotype, 58 unique
-combinations, and the two figures below in `example_data/library_profile/`.
+combinations, and the two figures below in `example_data/demo_reads_profile/`.
 
 ### 4. Run it on your own data
 
 Point the same command at your own sources FASTA + reads. Put quotes around any
-path with spaces. Outputs land in a `library_profile/` folder next to your
-references.
+path with spaces. Outputs land in a `<reads>_profile/` folder next to your reads
+file, named after it (e.g. `GS_pKW2-libv6-DH5a.fastq` -> `GS_pKW2-libv6-DH5a_profile/`)
+so each results folder traces back to the run it came from, or wherever you point
+`--out`.
 
 ---
 
@@ -114,8 +116,8 @@ synthetic demo's planted skew: `srcA` favoured at N, `srcD` at C):
   domains. The tool aligns them, **auto-detects the domains** as the variable
   blocks between conserved junctions (the count is discovered, not assumed), and
   learns each source's domain alleles.
-- **`reads.fastq`**  one pooled run of all reads. `.fastq` or `.fasta`, a single
-  file, several files, or a folder.
+- **`reads.fastq`**  one pooled run of all reads. `.fastq` or `.fasta` (optionally
+  gzipped, `.fastq.gz` / `.fasta.gz`), a single file, several files, or a folder.
 
 ## Options
 
@@ -127,10 +129,13 @@ synthetic demo's planted skew: `srcA` favoured at N, `srcD` at C):
 | `--names` | `dom1,dom2,…` | friendly domain names, in order (comma- or space-separated) |
 | `--anchor-min` | 20 | min length of a conserved run treated as a junction |
 | `--expected FILE` | — | a designed-combination list (one combo per line) for a true coverage report |
+| `--out DIR` | `<reads>_profile/` | output directory (created if needed) |
+
+Also, reads may be gzipped: `.fastq.gz` / `.fasta.gz` are read directly.
 
 ## Outputs
 
-Written to `library_profile/` next to the references file:
+Written to `<reads>_profile/` next to the reads file (or `--out DIR`):
 
 | File | Contents |
 |---|---|
