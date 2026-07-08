@@ -13,6 +13,9 @@ import random
 import sys
 from pathlib import Path
 
+import struct
+
+from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 
@@ -78,6 +81,66 @@ def _chimera(n_src: str, cat_src: str, c_src: str, *, err: float = 0.0,
 
 def _panel():
     return cpf.build_panel(_refs(), k=15, anchor_min=20, names=("N", "cat", "C"))
+
+
+# --- reference input: FASTA, SnapGene .dna, and folders --------------------- #
+def _write_dna(path: Path, seq: str, *, circular: bool = False) -> None:
+    """Write a minimal valid SnapGene .dna file: a cookie packet followed by a
+    DNA packet (1 flags byte + sequence). Matches Bio.SeqIO.SnapGeneIO's reader."""
+    cookie = b"\x09" + struct.pack(">I", 14) + b"SnapGene" + struct.pack(">HHH", 0, 1, 0)
+    payload = struct.pack(">B", 0x01 if circular else 0x00) + seq.encode("ascii")
+    dna = b"\x00" + struct.pack(">I", len(payload)) + payload
+    path.write_bytes(cookie + dna)
+
+
+def test_snapgene_dna_reference_is_read(tmp_path):
+    p = tmp_path / "srcX.dna"
+    _write_dna(p, "ACGTACGTACGTACGT")
+    recs = cpf._read_ref_file(p)
+    assert len(recs) == 1
+    assert str(recs[0].seq) == "ACGTACGTACGTACGT"
+    assert recs[0].id == "srcX"                 # named after the file, not "<unknown id>"
+
+
+def test_reference_folder_of_dna_combines(tmp_path):
+    d = tmp_path / "panel"
+    d.mkdir()
+    _write_dna(d / "srcA.dna", "AAAACCCCGGGGTTTT")
+    _write_dna(d / "srcB.dna", "TTTTGGGGCCCCAAAA")
+    recs = cpf.read_references(d)
+    assert sorted(r.id for r in recs) == ["srcA", "srcB"]
+    combined = tmp_path / "panel_combined_refs.fasta"      # written beside the folder
+    assert combined.exists()
+    reread = list(SeqIO.parse(str(combined), "fasta"))
+    assert {r.id for r in reread} == {"srcA", "srcB"}
+
+
+def test_reference_folder_of_single_fastas_combines(tmp_path):
+    d = tmp_path / "sources"
+    d.mkdir()
+    for s in SOURCES:                                       # one source per .fasta file
+        SeqIO.write([_ref(s)], str(d / f"{s}.fasta"), "fasta")
+    recs = cpf.read_references(d)
+    assert sorted(r.id for r in recs) == sorted(SOURCES)
+    # and the combined panel drives the full pipeline the same as a multi-FASTA
+    panel = cpf.build_panel(recs, k=15, anchor_min=20, names=("N", "cat", "C"))
+    assert [dm.name for dm in panel.domains] == ["N", "cat", "C"]
+
+
+def test_single_dna_reference_needs_two_sources(tmp_path):
+    import pytest
+    p = tmp_path / "only.dna"
+    _write_dna(p, "ACGTACGTACGT")
+    with pytest.raises(ValueError):
+        cpf.read_references(p)
+
+
+def test_unknown_reference_extension_errors(tmp_path):
+    import pytest
+    p = tmp_path / "refs.txt"
+    p.write_text(">a\nACGT\n>b\nTGCA\n", encoding="utf-8")
+    with pytest.raises(ValueError):
+        cpf.read_references(p)
 
 
 # --- domain auto-detection -------------------------------------------------- #

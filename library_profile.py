@@ -22,8 +22,9 @@ WHY NO ALIGNER (the design choice)
     (never private), so they simply never vote.
 
 HOW IT WORKS (the pipeline, in order)
-    1. read the multi-FASTA of full-length source references (one per source) and
-       align them to each other (center-star) -> reference_msa().
+    1. read the full-length source references (one per source) -- a multi-FASTA, or
+       a folder of per-source .fasta/.dna (SnapGene) files -> read_references() --
+       and align them to each other (center-star) -> reference_msa().
     2. DETECT DOMAINS automatically: long perfectly-conserved runs are the
        assembly junctions; the variable blocks between them are the domains
        (their count is discovered, not assumed) -> detect_domains().
@@ -42,6 +43,7 @@ HOW IT WORKS (the pipeline, in order)
 
 USAGE
     python library_profile.py REFERENCES.fasta READS.fastq [READS2.fastq ...]
+    python library_profile.py a_folder_of_dna_files READS.fastq
     python library_profile.py REFERENCES.fasta a_folder_of_fastqs
     options:
       --k 15                 k-mer length (odd; larger = stricter, fewer hits)
@@ -144,19 +146,66 @@ class ReferencePanel:
     k: int
 
 
+# Reference formats: FASTA and SnapGene .dna (SnapGene stores one sequence per
+# file, so a .dna panel is a FOLDER of .dna files).
+_REF_FORMATS = {".fasta": "fasta", ".fa": "fasta", ".fna": "fasta", ".dna": "snapgene"}
+
+
+def _read_ref_file(path: Path) -> list:
+    """Read one reference file (FASTA or SnapGene .dna) into records. A .dna file
+    holds a single sequence with no reliable internal name, so its record is named
+    after the file; multi-record FASTAs keep their own header ids."""
+    fmt = _REF_FORMATS.get(path.suffix.lower())
+    if fmt is None:
+        raise ValueError(
+            f"unrecognised reference format '{path.suffix}' for '{path.name}'; "
+            "expected .fasta/.fa/.fna or SnapGene .dna."
+        )
+    recs = list(SeqIO.parse(str(path), fmt))
+    if fmt == "snapgene":
+        for r in recs:                       # one record; give it a stable, readable id
+            r.id, r.name, r.description = path.stem, path.stem, ""
+    return recs
+
+
 def read_references(path: Path) -> list:
-    """Read the multi-FASTA of full-length source references (>=2 records)."""
-    recs = list(SeqIO.parse(str(path), "fasta"))
+    """Read the source panel (>=2 records). `path` may be a single multi-record
+    FASTA, a single .dna/.fasta file, or a FOLDER of per-source .fasta/.dna files.
+    A folder's sources are read and combined into one '<folder>_combined_refs.fasta'
+    written beside the folder, so you get a single reusable panel file."""
+    if path.is_dir():
+        files = sorted(f for f in path.iterdir()
+                       if f.is_file() and f.suffix.lower() in _REF_FORMATS)
+        if not files:
+            raise ValueError(
+                f"no reference files (.fasta/.fa/.fna/.dna) found in folder '{path.name}'."
+            )
+        recs: list = []
+        for f in files:
+            recs.extend(_read_ref_file(f))
+    else:
+        recs = _read_ref_file(path)
+
     if len(recs) < 2:
         raise ValueError(
-            f"need >=2 source references in '{path.name}', found {len(recs)}. "
-            "This tool profiles a library built from a PANEL of sources."
+            f"need >=2 source references, found {len(recs)}. This tool profiles a "
+            "library built from a PANEL of sources; pass a multi-record FASTA or a "
+            "folder of per-source .fasta/.dna files."
         )
     seen: set[str] = set()
     for r in recs:
         if r.id in seen:
-            raise ValueError(f"duplicate reference name '{r.id}' in {path.name}")
+            raise ValueError(
+                f"duplicate reference name '{r.id}'. Give each source a unique name "
+                "(for a folder, a unique file name per source)."
+            )
         seen.add(r.id)
+
+    if path.is_dir():                        # persist the combined panel for reuse
+        combined = path.parent / f"{path.name}_combined_refs.fasta"
+        SeqIO.write(recs, str(combined), "fasta")
+        print(f"Combined {len(files)} reference file(s) from '{path.name}/' "
+              f"-> {combined.name} ({len(recs)} sources)")
     return recs
 
 

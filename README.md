@@ -111,11 +111,14 @@ synthetic demo's planted skew: `srcA` favoured at N, `srcD` at C):
 
 ## Inputs
 
-- **`sources.fasta`**  full-length references, **one record per source**. They are
-  expected to share a backbone and conserved junctions and differ inside the
-  domains. The tool aligns them, **auto-detects the domains** as the variable
-  blocks between conserved junctions (the count is discovered, not assumed), and
-  learns each source's domain alleles.
+- **`sources`**  full-length references, **one per source**, as any of:
+  a single multi-record **FASTA**; a single **SnapGene `.dna`** or `.fasta`; or a
+  **folder** of per-source `.fasta`/`.dna` files (mix allowed). A folder is combined
+  into one `<folder>_combined_refs.fasta` beside it, which you can reuse. `.dna`
+  sources are named after their file. They are expected to share a backbone and
+  conserved junctions and differ inside the domains; the tool aligns them,
+  **auto-detects the domains** as the variable blocks between conserved junctions
+  (the count is discovered, not assumed), and learns each source's domain alleles.
 - **`reads.fastq`**  one pooled run of all reads. `.fastq` or `.fasta` (optionally
   gzipped, `.fastq.gz` / `.fasta.gz`), a single file, several files, or a folder.
 
