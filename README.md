@@ -3,14 +3,13 @@
 Profile a **combinatorial chimera library** from one pooled long-read run. For
 every read, work out which source contributed each domain, then summarise the
 whole library: combination composition, per-domain source usage, abundance skew,
-and dropouts. Runs **locally**, pure-Python — no account, no upload, no aligner
-to compile.
+and dropouts. Runs **locally**, pure-Python. 
 
 A **chimera library** is a pool of constructs, each assembled from interchangeable
 domain fragments drawn from a panel of source genes, each taken from a different source and fused at
 conserved junctions. One pooled Nanopore (e.g. Plasmidsaurus) run gives thousands
-of reads; per molecule we want the **domain mosaic** — `N=srcA | mid=srcC |
-C=srcD` — and then the library-wide picture.
+of reads; per molecule we want the **domain mosaic**—`N=srcA | mid=srcC |
+C=srcD`—and then the library-wide picture.
 
 ```bash
 python library_profile.py sources.fasta reads.fastq --names N,mid,C
@@ -24,7 +23,7 @@ A chimera read matches **no single** reference end-to-end, so a "best hit" is
 meaningless. Instead the tool counts k-mers that are **private to one source
 within a domain**: the source alleles are divergent enough (often 20–45%) that
 each carries hundreds of unique k-mers, so counting which source's private k-mers
-a read contains — per domain — classifies every domain unambiguously even at ~5%
+a read contains, per domain, classifies every domain unambiguously even at ~5%
 Nanopore error. Shared backbone and conserved-junction k-mers are never private,
 so they simply never vote.
 
@@ -35,13 +34,13 @@ where `minimap2`/`mappy` do not build.
 
 A domain is only called when its top source clears an absolute marker floor **and**
 beats the runner-up by a margin; otherwise it is left `unassigned`. A read counts
-toward composition only when **every** domain is called — truncated reads, or reads
+toward composition only when **every** domain is called, truncated reads, or reads
 using a source that isn't in your panel, are reported as `partial`/`ambiguous` and
 **never force-counted**. The composition you get is one the data actually supports.
 
 > **Limited by your panel.** Each domain is resolved to one of the sources you
 > provide (or flagged). If the real library includes building blocks you didn't
-> supply, reads using them show up as `partial` rather than mis-called — add the
+> supply, reads using them show up as `partial` rather than mis-called, add the
 > missing source references to resolve them.
 
 ---
@@ -67,12 +66,12 @@ from inside the project folder:
 pip install -r requirements.txt
 ```
 
-That installs `biopython` and `matplotlib` — nothing else, and no internet is
+That installs `biopython` and `matplotlib` , nothing else, and no internet is
 needed when you run the tool.
 
 ### 3. Try it on the bundled demo data
 
-Everything in `example_data/` is **fully synthetic** (seeded random DNA — not real
+Everything in `example_data/` is **fully synthetic** (seeded random DNA , not real
 biology): four sources sharing a backbone and two conserved junctions, and 240
 reads stitched from random source mosaics with planted ~4% errors, mixed strand,
 and some truncation.
@@ -95,12 +94,12 @@ references.
 
 ## Example output
 
-`domain_usage.png` — how often each source was used at each domain (here the
+`domain_usage.png` how often each source was used at each domain (here the
 synthetic demo's planted skew: `srcA` favoured at N, `srcD` at C):
 
 ![domain usage heatmap](images/example_domain_usage.png)
 
-`top_genotypes.png` — the most abundant source-combinations across the library:
+`top_genotypes.png` the most abundant source-combinations across the library:
 
 ![top genotypes bar](images/example_top_genotypes.png)
 
@@ -110,12 +109,12 @@ synthetic demo's planted skew: `srcA` favoured at N, `srcD` at C):
 
 ## Inputs
 
-- **`sources.fasta`** — full-length references, **one record per source**. They are
+- **`sources.fasta`**  full-length references, **one record per source**. They are
   expected to share a backbone and conserved junctions and differ inside the
   domains. The tool aligns them, **auto-detects the domains** as the variable
   blocks between conserved junctions (the count is discovered, not assumed), and
   learns each source's domain alleles.
-- **`reads.fastq`** — one pooled run of all reads. `.fastq` or `.fasta`, a single
+- **`reads.fastq`**  one pooled run of all reads. `.fastq` or `.fasta`, a single
   file, several files, or a folder.
 
 ## Options
@@ -155,12 +154,12 @@ auto-detection, known-answer mosaic calls, strand invariance, and the honesty ga
 
 ## Notes & limitations
 
-- Read counts are **not** absolute abundances — Nanopore yield is length- and
+- Read counts are **not** absolute abundances, Nanopore yield is length and
   GC-biased, and shorter molecules load better. Treat composition as relative.
 - A combination being present is evidence of **assembly**, not of function.
 - Resolution is limited to the sources in your panel (see "Limited by your panel"
   above). Add missing source references to resolve `partial` reads.
-- This is research tooling provided as-is — sanity-check important results.
+- This is research tooling provided as-is sanity-check important results.
 
 ## License
 
