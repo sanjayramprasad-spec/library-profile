@@ -131,8 +131,6 @@ synthetic demo's planted skew: `srcA` favoured at N, `srcD` at C):
 | `--expected FILE` | — | a designed-combination list (one combo per line) for a true coverage report |
 | `--out DIR` | `<reads>_profile/` | output directory (created if needed) |
 
-Also, reads may be gzipped: `.fastq.gz` / `.fasta.gz` are read directly.
-
 ## Outputs
 
 Written to `<reads>_profile/` next to the reads file (or `--out DIR`):
